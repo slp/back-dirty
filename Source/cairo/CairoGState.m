@@ -301,7 +301,6 @@ static inline cairo_filter_t cairoFilterFromNSImageInterpolation(NSImageInterpol
   if (_surface != nil)
     {
       NSSize size = [_surface size];
-
       cairo_surface_set_device_offset([_surface surface], -theOffset.x, 
                                       theOffset.y - size.height);
     }
@@ -723,7 +722,8 @@ static inline cairo_filter_t cairoFilterFromNSImageInterpolation(NSImageInterpol
             break;
         }
     }
-  cairo_set_antialias(_ct, [self shouldAntialias] ? CAIRO_ANTIALIAS_DEFAULT : CAIRO_ANTIALIAS_NONE);
+  //cairo_set_antialias(_ct, [self shouldAntialias] ? CAIRO_ANTIALIAS_DEFAULT : CAIRO_ANTIALIAS_NONE);
+  cairo_set_antialias(_ct, CAIRO_ANTIALIAS_SUBPIXEL);
 }
 
 - (void) DPSclip

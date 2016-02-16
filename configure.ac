@@ -23,7 +23,7 @@
 #  Free Software Foundation, 51 Franklin Street, Fifth Floor, 
 #  Boston, MA 02110-1301, USA.
 
-builtin(include, pkg.m4)dnl
+#builtin(include, pkg.m4)dnl
 
 AC_INIT
 AC_PREREQ(2.57)
@@ -272,7 +272,6 @@ fi
 #--------------------------------------------------------------------
 # Extended font support & UTF8 support
 #--------------------------------------------------------------------
-PKG_XFT=no
 PKG_CHECK_MODULES(XFT, xft, WITH_XFT=yes, WITH_XFT=no)
 
 if test $WITH_XFT = no; then
@@ -294,7 +293,6 @@ if test $WITH_XFT = no; then
   LIBS=${save_LIBS}
 else
   WITH_XFT=yes
-  PKG_XFT=yes
 fi
 
 if test $WITH_XFT = yes; then
@@ -452,22 +450,16 @@ fi
 #--------------------------------------------------------------------
 # Cairo graphics libraries
 #--------------------------------------------------------------------
-PKG_CAIRO=no
-PKG_CHECK_MODULES(CAIRO, cairo, have_cairo=yes, have_cairo=no)
-PKG_CAIRO_FT=no
+PKG_CHECK_MODULES([CAIRO], cairo)
 PKG_CHECK_MODULES(CAIRO_FT, cairo-ft, have_cairo_ft=yes, have_cairo_ft=no)
-PKG_CAIRO_XLIB=no
 PKG_CHECK_MODULES(CAIRO_XLIB, cairo-xlib, have_cairo_xlib=yes, have_cairo_xlib=no)
-PKG_CAIRO_WIN32=no
 PKG_CHECK_MODULES(CAIRO_WIN32, cairo-win32, have_cairo_win32=yes, have_cairo_win32=no)
-PKG_CAIRO_GLITZ=no
 PKG_CHECK_MODULES(CAIRO_GLITZ, cairo-glitz, have_cairo_glitz=yes, have_cairo_glitz=no)
-PKG_FONTCONFIG=no
 PKG_CHECK_MODULES(FONTCONFIG, fontconfig, have_fontconfig=yes, have_fontconfig=no)
 
-if test "$have_cairo" = no; then
-  AC_CHECK_LIB(cairo, cairo_create, have_cairo=yes)
-fi
+#if test "$have_cairo" = no; then
+#  AC_CHECK_LIB(cairo, cairo_create, have_cairo=yes)
+#fi
 
 if test "$have_cairo_ft" = no; then
   AC_CHECK_LIB(cairo, cairo_ft_font_face_create_for_ft_face, have_cairo_ft=yes)
@@ -561,7 +553,7 @@ case $target_os in
 esac
 
 AC_ARG_ENABLE(server, 
-  [  --enable-server=SRV     Build server type: x11, win32],,
+  [  --enable-server=SRV     Build server type: x11, win32, wayland],,
   enable_server=$BUILD_SERVER)
 AC_ARG_ENABLE(graphics, 
   [  --enable-graphics=GPH   Build graphics: xlib, xdps, winlib, art, cairo, opal],,
@@ -580,6 +572,8 @@ if test x"$BUILD_GRAPHICS" = "xcairo"; then
     AC_MSG_WARN([can't find freetype, required for graphics=cairo])
     if test $BUILD_SERVER = win32; then
       BUILD_GRAPHICS=winlib
+    elif test $BUILD_SERVER = wayland; then
+      AC_MSG_ERROR([wayland backend requires cairo])
     else
       BUILD_GRAPHICS=xlib
     fi
@@ -588,6 +582,8 @@ if test x"$BUILD_GRAPHICS" = "xcairo"; then
     AC_MSG_WARN([can't find cairo, required for graphics=cairo!])
     if test $BUILD_SERVER = win32; then
       BUILD_GRAPHICS=winlib
+    elif test $BUILD_SERVER = wayland; then
+      AC_MSG_ERROR([wayland backend requires cairo])
     else
       BUILD_GRAPHICS=art
     fi
@@ -638,6 +634,9 @@ if test x"$BUILD_GRAPHICS" = "xcairo"; then
       CAIRO_LIBS="$CAIRO_LIBS $CAIRO_XLIB_LIBS $XFT_LIBS"
       CAIRO_CFLAGS="$CAIRO_CFLAGS $CAIRO_XLIB_CFLAGS"
       AC_MSG_RESULT(xlib)
+    elif test $BUILD_SERVER = wayland; then
+      CAIRO_LIBS="$CAIRO_LIBS $XFT_LIBS"
+      CAIRO_CFLAGS="$CAIRO_CFLAGS"
     else
       AC_MSG_ERROR([Invalid Cairo installation])
     fi
@@ -739,6 +738,7 @@ fi
 AH_TOP([
 #define SERVER_x11      1
 #define SERVER_win32    2
+#define SERVER_wayland  3
 #define GRAPHICS_xdps   0
 #define GRAPHICS_art    1
 #define GRAPHICS_xlib   2

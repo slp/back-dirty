@@ -64,6 +64,31 @@
       return NO;
     }
 
+#if 0
+  char *cdata = malloc(sizeof(char) * 4 * 4 * 4);
+  if (!cdata)
+    {
+      NSLog(@"Could not allocate drawing space for glyphs");
+      return NO;
+    }
+
+  cairo_surface_t *isurface = cairo_image_surface_create_for_data(cdata, CAIRO_FORMAT_ARGB32, 4, 4, 4*4);
+  cairo_status_t status = cairo_surface_status(isurface);
+  if (status != CAIRO_STATUS_SUCCESS)
+    {
+      NSLog(@"Error while creating surface: %s", 
+            cairo_status_to_string(status));
+      cairo_surface_destroy(isurface);
+      free(cdata);
+      return NO;
+    }
+ 
+  cairo_t *ct = cairo_create(isurface);
+  cairo_select_font_face(ct, "sans",
+			 CAIRO_FONT_SLANT_NORMAL,
+			 CAIRO_FONT_WEIGHT_NORMAL);
+#endif
+
   // Get default font options
   options = cairo_font_options_create();
   if (cairo_font_options_status(options) != CAIRO_STATUS_SUCCESS)
@@ -80,9 +105,13 @@
   // hinting settings are used there as when we draw. For now,
   // just force hinting to be off.
   cairo_font_options_set_hint_metrics(options, CAIRO_HINT_METRICS_ON);
-  cairo_font_options_set_hint_style(options, CAIRO_HINT_STYLE_NONE);
+  //cairo_font_options_set_hint_style(options, CAIRO_HINT_STYLE_NONE);
+  cairo_font_options_set_hint_style(options, CAIRO_HINT_STYLE_MEDIUM);
 
+  //_scaled = cairo_scaled_font_create(cairo_get_font_face(ct), &font_matrix, &ctm, options);
   _scaled = cairo_scaled_font_create(face, &font_matrix, &ctm, options);
+  //cairo_surface_destroy(isurface);
+  //cairo_destroy(ct);
   cairo_font_options_destroy(options);
   if (cairo_scaled_font_status(_scaled) != CAIRO_STATUS_SUCCESS)
     {
@@ -419,6 +448,7 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
   unsigned char *b;
   int i;
   unsigned int size = 3*length+1;
+  cairo_scaled_font_t *face;
 
   for (i = 0; i < length; i++)
     {
@@ -434,6 +464,14 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
             [NSString stringWithCharacters: ustr length: length]);
       return;
     }
+
+#if 0
+  cairo_select_font_face(ct, "sans",
+			 CAIRO_FONT_SLANT_NORMAL,
+			 CAIRO_FONT_WEIGHT_NORMAL);
+
+  face = cairo_get_scaled_font(ct);
+#endif
 
   cairo_set_scaled_font(ct, _scaled);
   if (cairo_status(ct) != CAIRO_STATUS_SUCCESS)
